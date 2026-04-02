@@ -1,5 +1,5 @@
 # Window Title Applet
-A Plasma 6 applet that builds on the work of [Psifidotos](https://github.com/psifidotos).
+A Plasma 6.6.2 applet that builds on the work of [Psifidotos](https://github.com/psifidotos).
 
 ## Substitutions
 - <b>%a</b> : Application Name
