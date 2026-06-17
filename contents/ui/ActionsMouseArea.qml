@@ -4,6 +4,7 @@ import org.kde.kirigami as Kirigami
 import org.kde.plasma.plasmoid
 import org.kde.plasma.plasma5support as Plasma5Support
 import QtQuick.Controls as Controls
+import org.kde.plasma.extras as PlasmaExtras
 
 MouseArea {
     id: actionsArea
@@ -14,14 +15,14 @@ MouseArea {
         if(existsWindowActive && event.button === Qt.MiddleButton && cfg.closeAllowed) {
             windowInfoLoader.item.requestClose();
         } else if (existsWindowActive && event.button === Qt.LeftButton && cfg.leftClickMenu) {
-            root.expanded = !root.expanded;
+            root.macAppMenuPopup.open(0, actionsArea.height);
         }
     }
 
     Rectangle {
         anchors.fill: parent
         color: Kirigami.Theme.textColor
-        visible: root.expanded
+        visible: root.macAppMenuPopup.status === PlasmaExtras.Menu.Open
         opacity: 0.15
     }
 

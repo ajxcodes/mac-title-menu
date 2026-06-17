@@ -5,7 +5,7 @@ import org.kde.taskmanager as TaskManager
 
 Item {
     id: plasmaTasksItem
-    readonly property bool existsWindowActive: root.activeTaskItem && tasksRepeater.count > 0 && (activeTaskItem.isActive || root.expanded || root.isAboutOpen)
+    readonly property bool existsWindowActive: root.activeTaskItem && tasksRepeater.count > 0 && (activeTaskItem.isActive || root.macAppMenuPopup.opened || root.isAboutOpen)
     property Item activeTaskItem: null
 
     TaskManager.TasksModel {

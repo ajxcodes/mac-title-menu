@@ -6,6 +6,7 @@ import QtQuick.Window
 import org.kde.plasma.plasmoid
 import org.kde.plasma.core as PlasmaCore
 import org.kde.plasma.components as PlasmaComponents
+import org.kde.plasma.extras as PlasmaExtras
 import org.kde.taskmanager       as TaskManager
 import org.kde.kirigami          as Kirigami
 import org.kde.activities        as Activities
@@ -26,6 +27,7 @@ PlasmoidItem {
     readonly property bool isActiveWindowMaximized: existsWindowActive && activeTaskItem.isMaximized
     readonly property var cfg:                      plasmoid.configuration
     property bool isAboutOpen:                      aboutWindow.visible
+    property alias macAppMenuPopup:                 macAppMenuPopup
 
     property Item activeTaskItem:                   windowInfoLoader.item.activeTaskItem
     property var icon:                              Tools.getIcon()
@@ -117,110 +119,63 @@ PlasmoidItem {
             PlasmaTasksModel{}
         }
     }
-    compactRepresentation: Item {
-        implicitWidth: titleLayout.implicitWidth
-        implicitHeight: titleLayout.implicitHeight
-
-        Title { 
-            id: titleLayout
-            onImplicitWidthChanged: root.titleImplicitWidth = implicitWidth
-            onImplicitHeightChanged: root.titleImplicitHeight = implicitHeight
-        }
-        ActionsMouseArea {}
+    Title { 
+        id: titleLayout
+        onImplicitWidthChanged: root.titleImplicitWidth = implicitWidth
+        onImplicitHeightChanged: root.titleImplicitHeight = implicitHeight
     }
+    ActionsMouseArea {}
 
-    fullRepresentation: Rectangle {
-        color: Kirigami.Theme.backgroundColor
-        border.color: Kirigami.ColorUtils.linearInterpolation(Kirigami.Theme.backgroundColor, Kirigami.Theme.textColor, 0.15)
-        border.width: 1
-        radius: Kirigami.Units.smallSpacing
+    PlasmaExtras.Menu {
+        id: macAppMenuPopup
+        visualParent: root
 
-        readonly property real popupWidth: menuLayout.implicitWidth + Kirigami.Units.smallSpacing * 2
-        readonly property real popupHeight: menuLayout.implicitHeight + Kirigami.Units.smallSpacing * 2
+        PlasmaExtras.MenuItem {
+            text: i18n("About %1", root.activeTaskItem ? root.activeTaskItem.appName : "")
+            onClicked: Qt.callLater(function(){
+                aboutWindow.targetAppName = root.activeTaskItem ? root.activeTaskItem.appName : "Mac App Menu";
+                aboutWindow.targetTitle = root.text;
+                aboutWindow.targetIcon = root.icon;
+                aboutWindow.visible = true;
+                aboutWindow.requestActivate();
+            })
+        }
+        PlasmaExtras.MenuItem { separator: true }
 
-        implicitWidth: popupWidth
-        implicitHeight: popupHeight
+        PlasmaExtras.MenuItem {
+            text: root.activeTaskItem && root.activeTaskItem.isMinimized ? i18n("Restore") : i18n("Minimize")
+            onClicked: Qt.callLater(function(){
+                if(existsWindowActive) windowInfoLoader.item.toggleMinimized();
+            })
+        }
 
-        Layout.minimumWidth: popupWidth
-        Layout.maximumWidth: popupWidth
-        Layout.minimumHeight: popupHeight
-        Layout.maximumHeight: popupHeight
+        PlasmaExtras.MenuItem {
+            text: root.activeTaskItem && root.activeTaskItem.isMaximized ? i18n("Restore") : i18n("Maximize")
+            onClicked: Qt.callLater(function(){
+                if(existsWindowActive) windowInfoLoader.item.toggleMaximized();
+            })
+        }
 
-        ColumnLayout {
-            id: menuLayout
-            anchors.margins: Kirigami.Units.smallSpacing
-            anchors.top: parent.top
-            anchors.left: parent.left
-            spacing: 0
+        PlasmaExtras.MenuItem {
+            text: i18n("Keep Above")
+            onClicked: Qt.callLater(function(){
+                if(existsWindowActive) windowInfoLoader.item.toggleKeepAbove();
+            })
+        }
 
-            ItemDelegate {
-                Layout.fillWidth: true
-                text: i18n("About %1", root.activeTaskItem ? root.activeTaskItem.appName : "")
-                icon.name: "help-about"
-                onClicked: Qt.callLater(function(){
-                    aboutWindow.targetAppName = root.activeTaskItem ? root.activeTaskItem.appName : "Mac App Menu";
-                    aboutWindow.targetTitle = root.text;
-                    aboutWindow.targetIcon = root.icon;
-                    aboutWindow.visible = true;
-                    aboutWindow.requestActivate();
-                    root.expanded = false;
-                })
-            }
-            Rectangle {
-                Layout.fillWidth: true
-                height: 1
-                color: Kirigami.ColorUtils.linearInterpolation(Kirigami.Theme.backgroundColor, Kirigami.Theme.textColor, 0.15)
-            }
-            ItemDelegate {
-                Layout.fillWidth: true
-                text: root.activeTaskItem && root.activeTaskItem.isMinimized ? i18n("Restore") : i18n("Minimize")
-                icon.name: root.activeTaskItem && root.activeTaskItem.isMinimized ? "window-restore" : "window-minimize"
-                onClicked: Qt.callLater(function(){
-                    if(existsWindowActive) windowInfoLoader.item.toggleMinimized();
-                    root.expanded = false;
-                })
-            }
-            ItemDelegate {
-                Layout.fillWidth: true
-                text: root.activeTaskItem && root.activeTaskItem.isMaximized ? i18n("Restore") : i18n("Maximize")
-                icon.name: root.activeTaskItem && root.activeTaskItem.isMaximized ? "window-restore" : "window-maximize"
-                onClicked: Qt.callLater(function(){
-                    if(existsWindowActive) windowInfoLoader.item.toggleMaximized();
-                    root.expanded = false;
-                })
-            }
-            ItemDelegate {
-                Layout.fillWidth: true
-                text: i18n("Keep Above")
-                icon.name: "go-up"
-                onClicked: Qt.callLater(function(){
-                    if(existsWindowActive) windowInfoLoader.item.toggleKeepAbove();
-                    root.expanded = false;
-                })
-            }
-            ItemDelegate {
-                Layout.fillWidth: true
-                text: i18n("Pin to all Desktops")
-                icon.name: "window-pin"
-                onClicked: Qt.callLater(function(){
-                    if(existsWindowActive) windowInfoLoader.item.togglePinToAllDesktops();
-                    root.expanded = false;
-                })
-            }
-            Rectangle {
-                Layout.fillWidth: true
-                height: 1
-                color: Kirigami.ColorUtils.linearInterpolation(Kirigami.Theme.backgroundColor, Kirigami.Theme.textColor, 0.15)
-            }
-            ItemDelegate {
-                Layout.fillWidth: true
-                text: i18n("Close")
-                icon.name: "window-close"
-                onClicked: Qt.callLater(function(){
-                    if(existsWindowActive) windowInfoLoader.item.requestClose();
-                    root.expanded = false;
-                })
-            }
+        PlasmaExtras.MenuItem {
+            text: i18n("Pin to all Desktops")
+            onClicked: Qt.callLater(function(){
+                if(existsWindowActive) windowInfoLoader.item.togglePinToAllDesktops();
+            })
+        }
+        PlasmaExtras.MenuItem { separator: true }
+
+        PlasmaExtras.MenuItem {
+            text: i18n("Close")
+            onClicked: Qt.callLater(function(){
+                if(existsWindowActive) windowInfoLoader.item.requestClose();
+            })
         }
     }
     PlasmaCore.ToolTipArea {
