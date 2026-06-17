@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls
+import QtQuick.Window
 
 import org.kde.plasma.plasmoid
 import org.kde.plasma.core as PlasmaCore
@@ -13,15 +14,19 @@ import org.kde.plasma.private.appmenu 1.0 as AppMenuPrivate
 
 PlasmoidItem {
     id: root
-    clip: true
     Plasmoid.constraintHints:   Plasmoid.CanFillArea
-    preferredRepresentation:    fullRepresentation
+    Plasmoid.backgroundHints:   root.expanded ? PlasmaCore.Types.NoBackground : PlasmaCore.Types.DefaultBackground
+    preferredRepresentation:    Plasmoid.compactRepresentation
+
+    property int titleImplicitWidth: 100
+    property int titleImplicitHeight: 20
 
     readonly property bool isVertical:              plasmoid.formFactor === PlasmaCore.Types.Vertical
     readonly property bool existsWindowActive:      windowInfoLoader.item && windowInfoLoader.item.existsWindowActive
     readonly property bool isActiveWindowPinned:    existsWindowActive && activeTaskItem.isOnAllDesktops
     readonly property bool isActiveWindowMaximized: existsWindowActive && activeTaskItem.isMaximized
     readonly property var cfg:                      plasmoid.configuration
+    property bool isAboutOpen:                      aboutWindow.visible
 
     property Item activeTaskItem:                   windowInfoLoader.item.activeTaskItem
     property var icon:                              Tools.getIcon()
@@ -34,9 +39,9 @@ PlasmoidItem {
                 target: root
                 text:   "Edit Mode"
                 icon:   "document-edit"
-                Layout.minimumWidth: isVertical?parent.width:titleLayout.implicitWidth
+                Layout.minimumWidth: isVertical?parent.width:root.titleImplicitWidth
                 Layout.maximumWidth: Layout.minimumWidth
-                Layout.minimumHeight: isVertical?titleLayout.implicitHeight:parent.height
+                Layout.minimumHeight: isVertical?root.titleImplicitHeight:parent.height
                 Layout.maximumHeight: Layout.minimumHeight
             }
         },
@@ -45,7 +50,7 @@ PlasmoidItem {
             when: cfg.lengthKind === 0 && !isVertical
             PropertyChanges{
                 target: root
-                Layout.minimumWidth: titleLayout.implicitWidth
+                Layout.minimumWidth: root.titleImplicitWidth
                 Layout.maximumWidth: Layout.minimumWidth
                 Layout.fillHeight:   true
             }
@@ -65,8 +70,8 @@ PlasmoidItem {
             when: cfg.lengthKind === 2 && !isVertical
             PropertyChanges{
                 target: root
-                Layout.minimumWidth: Math.min(cfg.fixedLength,titleLayout.implicitWidth)
-                Layout.maximumWidth: Math.min(cfg.fixedLength,titleLayout.implicitWidth)
+                Layout.minimumWidth: Math.min(cfg.fixedLength,root.titleImplicitWidth)
+                Layout.maximumWidth: Math.min(cfg.fixedLength,root.titleImplicitWidth)
                 Layout.fillHeight:   true
             }
         },
@@ -75,7 +80,7 @@ PlasmoidItem {
             when: cfg.lengthKind === 0 && isVertical
             PropertyChanges{
                 target: root
-                Layout.minimumHeight: titleLayout.implicitHeight
+                Layout.minimumHeight: root.titleImplicitHeight
                 Layout.maximumHeight: Layout.minimumHeight
                 Layout.fillWidth:     true
             }
@@ -95,8 +100,8 @@ PlasmoidItem {
             when: cfg.lengthKind === 2 && isVertical
             PropertyChanges{
                 target: root
-                Layout.minimumHeight: Math.min(cfg.fixedLength,titleLayout.implicitHeight)
-                Layout.maximumHeight: Math.min(cfg.fixedLength,titleLayout.implicitHeight)
+                Layout.minimumHeight: Math.min(cfg.fixedLength,root.titleImplicitHeight)
+                Layout.maximumHeight: Math.min(cfg.fixedLength,root.titleImplicitHeight)
                 Layout.fillWidth:     true
             }
         }
@@ -113,8 +118,112 @@ PlasmoidItem {
             PlasmaTasksModel{}
         }
     }
-    Title { id: titleLayout }
-    ActionsMouseArea{}
+    compactRepresentation: Item {
+        implicitWidth: titleLayout.implicitWidth
+        implicitHeight: titleLayout.implicitHeight
+
+        Title { 
+            id: titleLayout
+            onImplicitWidthChanged: root.titleImplicitWidth = implicitWidth
+            onImplicitHeightChanged: root.titleImplicitHeight = implicitHeight
+        }
+        ActionsMouseArea {}
+    }
+
+    fullRepresentation: Rectangle {
+        color: Kirigami.Theme.backgroundColor
+        border.color: Kirigami.ColorUtils.linearInterpolation(Kirigami.Theme.backgroundColor, Kirigami.Theme.textColor, 0.15)
+        border.width: 1
+        radius: Kirigami.Units.smallSpacing
+
+        readonly property real popupWidth: menuLayout.implicitWidth + Kirigami.Units.smallSpacing * 2
+        readonly property real popupHeight: menuLayout.implicitHeight + Kirigami.Units.smallSpacing * 2
+
+        implicitWidth: popupWidth
+        implicitHeight: popupHeight
+
+        Layout.minimumWidth: popupWidth
+        Layout.maximumWidth: popupWidth
+        Layout.minimumHeight: popupHeight
+        Layout.maximumHeight: popupHeight
+
+        ColumnLayout {
+            id: menuLayout
+            anchors.margins: Kirigami.Units.smallSpacing
+            anchors.top: parent.top
+            anchors.left: parent.left
+            spacing: 0
+
+            ItemDelegate {
+                Layout.fillWidth: true
+                text: i18n("About %1", root.activeTaskItem ? root.activeTaskItem.appName : "")
+                icon.name: "help-about"
+                onClicked: Qt.callLater(function(){
+                    aboutWindow.targetAppName = root.activeTaskItem ? root.activeTaskItem.appName : "Mac App Menu";
+                    aboutWindow.targetTitle = root.text;
+                    aboutWindow.targetIcon = root.icon;
+                    aboutWindow.visible = true;
+                    aboutWindow.requestActivate();
+                    root.expanded = false;
+                })
+            }
+            Rectangle {
+                Layout.fillWidth: true
+                height: 1
+                color: Kirigami.ColorUtils.linearInterpolation(Kirigami.Theme.backgroundColor, Kirigami.Theme.textColor, 0.15)
+            }
+            ItemDelegate {
+                Layout.fillWidth: true
+                text: root.activeTaskItem && root.activeTaskItem.isMinimized ? i18n("Restore") : i18n("Minimize")
+                icon.name: root.activeTaskItem && root.activeTaskItem.isMinimized ? "window-restore" : "window-minimize"
+                onClicked: Qt.callLater(function(){
+                    if(existsWindowActive) windowInfoLoader.item.toggleMinimized();
+                    root.expanded = false;
+                })
+            }
+            ItemDelegate {
+                Layout.fillWidth: true
+                text: root.activeTaskItem && root.activeTaskItem.isMaximized ? i18n("Restore") : i18n("Maximize")
+                icon.name: root.activeTaskItem && root.activeTaskItem.isMaximized ? "window-restore" : "window-maximize"
+                onClicked: Qt.callLater(function(){
+                    if(existsWindowActive) windowInfoLoader.item.toggleMaximized();
+                    root.expanded = false;
+                })
+            }
+            ItemDelegate {
+                Layout.fillWidth: true
+                text: i18n("Keep Above")
+                icon.name: "go-up"
+                onClicked: Qt.callLater(function(){
+                    if(existsWindowActive) windowInfoLoader.item.toggleKeepAbove();
+                    root.expanded = false;
+                })
+            }
+            ItemDelegate {
+                Layout.fillWidth: true
+                text: i18n("Pin to all Desktops")
+                icon.name: "window-pin"
+                onClicked: Qt.callLater(function(){
+                    if(existsWindowActive) windowInfoLoader.item.togglePinToAllDesktops();
+                    root.expanded = false;
+                })
+            }
+            Rectangle {
+                Layout.fillWidth: true
+                height: 1
+                color: Kirigami.ColorUtils.linearInterpolation(Kirigami.Theme.backgroundColor, Kirigami.Theme.textColor, 0.15)
+            }
+            ItemDelegate {
+                Layout.fillWidth: true
+                text: i18n("Close")
+                icon.name: "window-close"
+                onClicked: Qt.callLater(function(){
+                    if(existsWindowActive) windowInfoLoader.item.requestClose();
+                    root.expanded = false;
+                })
+            }
+        }
+    }
     PlasmaCore.ToolTipArea {
         anchors.fill: parent
         active: text !== ""
@@ -134,6 +243,60 @@ PlasmoidItem {
                 Layout.fillHeight: true
                 verticalAlignment: Text.AlignVCenter
                 text:root.text
+            }
+        }
+    }
+
+    Window {
+        id: aboutWindow
+        
+        property string targetAppName: "Mac App Menu"
+        property string targetTitle: ""
+        property var targetIcon: ""
+
+        title: i18n("About %1", targetAppName)
+        width: Kirigami.Units.gridUnit * 18
+        height: aboutLayout.implicitHeight + Kirigami.Units.largeSpacing * 2
+        x: Screen.width / 2 - width / 2
+        y: Screen.height / 2 - height / 2
+        color: Kirigami.Theme.backgroundColor
+        flags: Qt.Dialog | Qt.WindowCloseButtonHint | Qt.WindowTitleHint
+
+        ColumnLayout {
+            id: aboutLayout
+            anchors.fill: parent
+            anchors.margins: Kirigami.Units.largeSpacing
+            spacing: Kirigami.Units.smallSpacing
+
+            Kirigami.Icon {
+                Layout.alignment: Qt.AlignHCenter
+                Layout.preferredWidth: Kirigami.Units.iconSizes.huge
+                Layout.preferredHeight: Kirigami.Units.iconSizes.huge
+                source: aboutWindow.targetIcon
+            }
+
+            PlasmaComponents.Label {
+                Layout.alignment: Qt.AlignHCenter
+                text: aboutWindow.targetAppName
+                font.bold: true
+                font.pixelSize: Kirigami.Theme.defaultFont.pixelSize * 1.5
+            }
+
+            PlasmaComponents.Label {
+                Layout.alignment: Qt.AlignHCenter
+                text: aboutWindow.targetTitle
+                elide: Text.ElideRight
+                Layout.fillWidth: true
+                horizontalAlignment: Text.AlignHCenter
+                opacity: 0.7
+            }
+
+            Item { Layout.fillHeight: true } // Spacer
+
+            PlasmaComponents.Button {
+                Layout.alignment: Qt.AlignHCenter
+                text: i18n("Close")
+                onClicked: aboutWindow.visible = false
             }
         }
     }

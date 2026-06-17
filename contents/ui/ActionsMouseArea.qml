@@ -1,7 +1,9 @@
 import QtQuick
 import org.kde.plasma.core
+import org.kde.kirigami as Kirigami
 import org.kde.plasma.plasmoid
 import org.kde.plasma.plasma5support as Plasma5Support
+import QtQuick.Controls as Controls
 
 MouseArea {
     id: actionsArea
@@ -9,9 +11,21 @@ MouseArea {
     anchors.fill: parent
     property bool wheelIsBlocked: false
     onClicked: function(event){
-        if(existsWindowActive && event.button === Qt.MiddleButton && cfg.closeAllowed)
+        if(existsWindowActive && event.button === Qt.MiddleButton && cfg.closeAllowed) {
             windowInfoLoader.item.requestClose();
+        } else if (existsWindowActive && event.button === Qt.LeftButton && cfg.leftClickMenu) {
+            root.expanded = !root.expanded;
+        }
     }
+
+    Rectangle {
+        anchors.fill: parent
+        color: Kirigami.Theme.highlightColor
+        visible: root.expanded
+        opacity: 0.3
+        radius: Kirigami.Units.smallSpacing
+    }
+
     onDoubleClicked: {
         if(existsWindowActive && cfg.maxminAllowed)
             windowInfoLoader.item.toggleMaximized();
@@ -58,4 +72,6 @@ MouseArea {
         interval: 200
         onTriggered: actionsArea.wheelIsBlocked = false;
     }
+
+
 }

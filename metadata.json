@@ -5,17 +5,21 @@
             {
                 "Email": "dhruv8sh@proton.me",
                 "Name": "Dhruvesh Surolia"
+            },
+            {
+                "Email": "user@example.com",
+                "Name": "ajxcodes"
             }
         ],
         "Category": "Windows and Tasks",
-        "Description": "Shows the application title and icon of the active window",
+        "Description": "Shows the application title and icon of the active window with a Mac-like context menu",
         "Icon": "preferences-desktop",
-        "Id": "org.kde.windowtitle",
+        "Id": "com.ajxcodes.macappmenu",
         "License": "GPLv2",
-        "Name": "Window Title",
-        "Version": "0.9.0",
-        "Website": "https://github.com/dhruv8sh/plasma6-window-title-applet"
+        "Name": "Mac App Menu",
+        "Version": "1.0.0",
+        "Website": "https://github.com/ajxcodes/mac-app-menu"
     },
-    "Keyword": "window title icon",
+    "Keyword": "window title icon mac menu",
     "X-Plasma-API-Minimum-Version": "6.0"
 }

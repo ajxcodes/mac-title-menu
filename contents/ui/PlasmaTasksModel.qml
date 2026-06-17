@@ -5,7 +5,7 @@ import org.kde.taskmanager as TaskManager
 
 Item {
     id: plasmaTasksItem
-    readonly property bool existsWindowActive: root.activeTaskItem && tasksRepeater.count > 0 && activeTaskItem.isActive
+    readonly property bool existsWindowActive: root.activeTaskItem && tasksRepeater.count > 0 && (activeTaskItem.isActive || root.expanded || root.isAboutOpen)
     property Item activeTaskItem: null
 
     TaskManager.TasksModel {
@@ -92,6 +92,8 @@ Item {
 
                 onIsActiveChanged: {
                     if (isActive) {
+                        if (root.isAboutOpen) return;
+                        
                         if(plasmoid.configuration.showOnlyOnMaximize && !task.isMaximized)
                             plasmaTasksItem.activeTaskItem = null;
                         else

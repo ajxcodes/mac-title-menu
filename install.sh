@@ -1,5 +1,7 @@
-echo "Installing window-title-applet"
-rm -rf ~/.local/share/plasma/plasmoids/org.kde.windowtitle
-cp -r ./ ~/.local/share/plasma/plasmoids/org.kde.windowtitle
-systemctl --user restart plasma-plasmashell
-echo "Installed window-title-applet"
+echo "Installing mac-app-menu"
+DEST=~/.local/share/plasma/plasmoids/com.ajxcodes.macappmenu
+rm -rf "$DEST"
+mkdir -p "$DEST"
+cp -r contents metadata.json "$DEST"
+systemctl --user restart plasma-plasmashell.service
+echo "Installed mac-app-menu"

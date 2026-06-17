@@ -1,6 +1,10 @@
-# Window Title Applet
-A Plasma 6 applet that builds on the work of [Psifidotos](https://github.com/psifidotos).
+# Mac App Menu
+A Mac-like window title and context menu applet for Plasma 5 and 6.
 
+## Credits & Acknowledgments
+This project was refactored and expanded from the fantastic work of:
+- **[Dhruvesh Surolia](https://github.com/dhruv8sh/plasma6-window-title-applet)** (who ported it to Plasma 6)
+- **[Psifidotos](https://github.com/psifidotos)** (the original creator of the Active Window Control applet)
 ## Substitutions
 - <b>%a</b> : Application Name
 - <b>%w</b> : Windows Title

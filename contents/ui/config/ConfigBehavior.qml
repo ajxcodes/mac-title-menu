@@ -14,6 +14,7 @@ Kirigami.ScrollablePage {
     readonly property alias cfg_maxminAllowed: maxminAllowed.checked
     readonly property alias cfg_closeAllowed: closeAllowed.checked
     readonly property alias cfg_scrollAllowed: scrollAllowed.checked
+    readonly property alias cfg_leftClickMenu: leftClickMenu.checked
 
     Kirigami.FormLayout {
         Kirigami.Separator {
@@ -35,6 +36,10 @@ Kirigami.ScrollablePage {
         PC3.CheckBox{
             id: showTooltipChk
             Kirigami.FormData.label: i18n("Show tooltip on hover:")
+        }
+        PC3.CheckBox{
+            id: leftClickMenu
+            Kirigami.FormData.label: i18n("Left-Click opens Context Menu:")
         }
         PC3.CheckBox{
             id: maxminAllowed
