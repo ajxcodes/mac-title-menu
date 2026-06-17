@@ -7,8 +7,16 @@
                 "Name": "Dhruvesh Surolia"
             },
             {
-                "Email": "user@example.com",
+                "Email": "me@ajx.codes",
                 "Name": "ajxcodes"
+            },
+            {
+                "Email": "[EMAIL_ADDRESS]",
+                "Name": "ciolansteen"
+            },
+            {
+                "Email": "[EMAIL_ADDRESS]",
+                "Name": "NotAlexNoyle"
             }
         ],
         "Category": "Windows and Tasks",
@@ -17,7 +25,7 @@
         "Id": "com.ajxcodes.macappmenu",
         "License": "GPLv2",
         "Name": "Mac App Menu",
-        "Version": "1.0.0",
+        "Version": "0.10.0",
         "Website": "https://github.com/ajxcodes/mac-app-menu"
     },
     "Keyword": "window title icon mac menu",
