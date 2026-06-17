@@ -1,0 +1,39 @@
+name: Build and Release Plasmoid
+
+on:
+  push:
+    tags:
+      - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
+  workflow_dispatch: # Allows manual triggering from the GitHub Actions tab
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Required for creating releases
+      
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Extract Version from metadata.json
+        id: get_version
+        run: |
+          VERSION=$(grep -oP '"Version": "\K[^"]+' metadata.json)
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "Extracted version: $VERSION"
+
+      - name: Package Plasmoid
+        run: |
+          # Create a zip archive containing the required files
+          # Exclude .git and any hidden files just in case
+          zip -r mac-app-menu-v${{ env.VERSION }}.plasmoid contents/ metadata.json
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: mac-app-menu-v${{ env.VERSION }}.plasmoid
+          name: Mac App Menu v${{ env.VERSION }}
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
