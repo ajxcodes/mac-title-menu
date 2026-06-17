@@ -20,10 +20,9 @@ MouseArea {
 
     Rectangle {
         anchors.fill: parent
-        color: Kirigami.Theme.highlightColor
+        color: Kirigami.Theme.textColor
         visible: root.expanded
-        opacity: 0.3
-        radius: Kirigami.Units.smallSpacing
+        opacity: 0.15
     }
 
     onDoubleClicked: {

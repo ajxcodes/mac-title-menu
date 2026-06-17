@@ -3,5 +3,5 @@ DEST=~/.local/share/plasma/plasmoids/com.ajxcodes.macappmenu
 rm -rf "$DEST"
 mkdir -p "$DEST"
 cp -r contents metadata.json "$DEST"
-kquitapp6 plasmashell && kstart6 plasmashell
+systemctl --user restart plasma-plasmashell.service
 echo "Installed mac-app-menu"
