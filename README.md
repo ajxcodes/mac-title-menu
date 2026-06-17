@@ -24,22 +24,25 @@ This project was heavily refactored and expanded from the fantastic foundational
 <div align="center">
 <p>
   
-![](https://github.com/user-attachments/assets/96c6d653-89a1-491b-b458-eb9aff219ea5)<br/>
-<i>Plasmoid with Firefox web browser open</i>
+<img width="575" height="259" alt="image" src="https://github.com/user-attachments/assets/707ebc44-2cd3-48d1-a8cd-ca396e984387" />
+<br/>
+<i>App name (not clicked)</i>
 <br/><br/>
 </p>
   
 <p>
   
-![](https://github.com/user-attachments/assets/b6383c39-38bb-424d-8f10-b3144d72b889)<br/>
-<i>Plasmoid with multi-line title</i>
+<img width="575" height="259" alt="image" src="https://github.com/user-attachments/assets/8f7af9d8-5c41-40f7-a1a0-a122546c9122" />
+<br/>
+<i>App name clicked</i>
 <br/><br/>
 </p>
 
 <p>
   
-![](https://github.com/dhruv8sh/plasma6-window-title-applet/assets/67322047/52c59b33-b278-469c-9111-9ba0a0b2ae4f)<br/>
-<i>Example of placeholder text and icon</i>
+<img width="641" height="259" alt="image" src="https://github.com/user-attachments/assets/6bafe076-377b-4e99-a191-652f28d45378" />
+<br/>
+<i>App name with icon</i>
 <br/><br/>
 </p>
 
