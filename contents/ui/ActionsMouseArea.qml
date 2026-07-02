@@ -9,6 +9,7 @@ import org.kde.plasma.extras as PlasmaExtras
 MouseArea {
     id: actionsArea
     acceptedButtons: Qt.LeftButton | Qt.MiddleButton
+    hoverEnabled: true
     anchors.fill: parent
     property bool wheelIsBlocked: false
     onClicked: function(event){
@@ -27,8 +28,8 @@ MouseArea {
         anchors.rightMargin: Kirigami.Units.smallSpacing
         radius: Kirigami.Units.smallSpacing
         color: Kirigami.Theme.textColor
-        visible: root.macAppMenuPopup.status === PlasmaExtras.Menu.Open
-        opacity: 0.15
+        visible: root.macAppMenuPopup.status === PlasmaExtras.Menu.Open || actionsArea.containsMouse
+        opacity: root.macAppMenuPopup.status === PlasmaExtras.Menu.Open || actionsArea.pressed ? 0.15 : (actionsArea.containsMouse ? 0.05 : 0)
     }
 
     onDoubleClicked: {
