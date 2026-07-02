@@ -24,9 +24,9 @@
         "Icon": "preferences-desktop",
         "Id": "com.ajxcodes.macappmenu",
         "License": "GPLv2",
-        "Name": "Mac App Menu",
+        "Name": "Mac Title Menu",
         "Version": "0.10.0",
-        "Website": "https://github.com/ajxcodes/mac-app-menu"
+        "Website": "https://github.com/ajxcodes/mac-title-menu"
     },
     "Keyword": "window title icon mac menu",
     "X-Plasma-API-Minimum-Version": "6.0"

@@ -134,7 +134,7 @@ PlasmoidItem {
         PlasmaExtras.MenuItem {
             text: i18n("About %1", root.activeTaskItem ? root.activeTaskItem.appName : "")
             onClicked: Qt.callLater(function(){
-                aboutWindow.targetAppName = root.activeTaskItem ? root.activeTaskItem.appName : "Mac App Menu";
+                aboutWindow.targetAppName = root.activeTaskItem ? root.activeTaskItem.appName : "Mac Title Menu";
                 aboutWindow.targetTitle = root.text;
                 aboutWindow.targetIcon = root.icon;
                 aboutWindow.visible = true;
@@ -205,7 +205,7 @@ PlasmoidItem {
     Window {
         id: aboutWindow
         
-        property string targetAppName: "Mac App Menu"
+        property string targetAppName: "Mac Title Menu"
         property string targetTitle: ""
         property var targetIcon: ""
 
