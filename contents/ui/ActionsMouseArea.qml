@@ -19,16 +19,20 @@ MouseArea {
         }
     }
 
+    HoverHandler {
+        id: hoverHandler
+    }
+
     Rectangle {
         anchors.fill: parent
-        anchors.topMargin: 2
-        anchors.bottomMargin: 2
-        anchors.leftMargin: Kirigami.Units.smallSpacing
-        anchors.rightMargin: Kirigami.Units.smallSpacing
+        anchors.topMargin: Kirigami.Units.smallSpacing
+        anchors.bottomMargin: Kirigami.Units.smallSpacing
+        anchors.leftMargin: Kirigami.Units.largeSpacing
+        anchors.rightMargin: 0
         radius: Kirigami.Units.smallSpacing
         color: Kirigami.Theme.textColor
-        visible: root.macAppMenuPopup.status === PlasmaExtras.Menu.Open
-        opacity: 0.15
+        visible: root.macAppMenuPopup.opened || hoverHandler.hovered
+        opacity: root.macAppMenuPopup.opened || actionsArea.pressed ? 0.25 : (hoverHandler.hovered ? 0.15 : 0)
     }
 
     onDoubleClicked: {

@@ -70,4 +70,5 @@ GridLayout {
             }
         }
     }
+    CItem {length: cfg.lastSpace}
 }

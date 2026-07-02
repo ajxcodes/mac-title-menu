@@ -1,4 +1,4 @@
-# Mac App Menu
+# Mac Title Menu
 A Mac-like window title and context menu applet built natively for KDE Plasma 6.
 
 ## Features
@@ -76,7 +76,7 @@ This project was heavily refactored and expanded from the fantastic foundational
 You can easily install this directly through your Plasma Desktop:
 1. Right-click your panel and select **Add Widgets...**
 2. Click **Get New Widgets...**
-3. Search for **Mac App Menu** and hit install!
+3. Search for **Mac Title Menu** and hit install!
 
 ### Manual Installation
 If you've cloned this repository, you can easily install and test it using the provided script:
