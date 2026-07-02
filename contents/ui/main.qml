@@ -125,7 +125,6 @@ PlasmoidItem {
         onImplicitWidthChanged: root.titleImplicitWidth = implicitWidth + (Kirigami.Units.smallSpacing * 4)
         onImplicitHeightChanged: root.titleImplicitHeight = implicitHeight
     }
-    ActionsMouseArea {}
 
     PlasmaExtras.Menu {
         id: macAppMenuPopup
@@ -201,6 +200,8 @@ PlasmoidItem {
             }
         }
     }
+
+    ActionsMouseArea {}
 
     Window {
         id: aboutWindow
