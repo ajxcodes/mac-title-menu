@@ -23,47 +23,23 @@ This project was heavily refactored and expanded from the fantastic foundational
 ## Images
 <div align="center">
 <p>
-  
-<img width="575" height="259" alt="image" src="https://github.com/user-attachments/assets/707ebc44-2cd3-48d1-a8cd-ca396e984387" />
+<img src="./combined_screenshots.png" alt="Hover State Themes" width="600"/>
 <br/>
-<i>App name (not clicked)</i>
+<i>Hover states across different Plasma themes</i>
 <br/><br/>
 </p>
-  
+
 <p>
-  
-<img width="575" height="259" alt="image" src="https://github.com/user-attachments/assets/8f7af9d8-5c41-40f7-a1a0-a122546c9122" />
+<img src="./combined_pressed_screenshots.png" alt="Pressed State Themes" width="600"/>
 <br/>
-<i>App name clicked</i>
+<i>Pressed states across different Plasma themes</i>
 <br/><br/>
 </p>
 
 <p>
-  
-<img width="641" height="259" alt="image" src="https://github.com/user-attachments/assets/6bafe076-377b-4e99-a191-652f28d45378" />
+<img src="./combined_settings_screenshots.png" alt="Settings Configuration" width="800"/>
 <br/>
-<i>App name with icon</i>
-<br/><br/>
-</p>
-
-<p>
-  
-![](https://github.com/user-attachments/assets/e79649bc-0011-4530-b482-e5cfb51e03d2)<br/>
-<i>Appearance Settings</i>
-<br/><br/>
-</p>
-
-<p>
-  
-![Screenshot_20240728_192316](https://github.com/user-attachments/assets/d7dd90f1-1164-4665-982b-48785185b6e8)<br/>
-<i>Behavior Settings</i>
-<br/><br/>
-</p>
-
-<p>
-  
-![Screenshot_20240728_192323](https://github.com/user-attachments/assets/38050897-c45d-4753-b78c-bca48ab1f13e)<br/>
-<i>Substitutions Settings</i>
+<i>Applet Settings (Appearance, Behavior, Substitutions, Keyboard Shortcuts)</i>
 <br/><br/>
 </p>
 

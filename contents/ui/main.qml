@@ -7,6 +7,7 @@ import org.kde.plasma.plasmoid
 import org.kde.plasma.core as PlasmaCore
 import org.kde.plasma.components as PlasmaComponents
 import org.kde.plasma.extras as PlasmaExtras
+import org.kde.ksvg 1.0 as KSvg
 import org.kde.taskmanager       as TaskManager
 import org.kde.kirigami          as Kirigami
 import org.kde.activities        as Activities
@@ -28,6 +29,8 @@ PlasmoidItem {
     readonly property var cfg:                      plasmoid.configuration
     property bool isAboutOpen:                      aboutWindow.visible
     property alias macAppMenuPopup:                 macAppMenuPopup
+    property bool itemHovered:                      false
+    property bool itemPressed:                      false
 
     property Item activeTaskItem:                   windowInfoLoader.item.activeTaskItem
     property var icon:                              Tools.getIcon()
@@ -117,6 +120,20 @@ PlasmoidItem {
         Component{
             id: plasmaTasksModel
             PlasmaTasksModel{}
+        }
+    }
+    KSvg.FrameSvgItem {
+        anchors.fill: parent
+        anchors.leftMargin: Kirigami.Units.largeSpacing
+        anchors.rightMargin: 0
+        visible: root.macAppMenuPopup.status === PlasmaExtras.Menu.Open || root.itemHovered
+        imagePath: "widgets/menubaritem"
+        prefix: {
+            if (root.macAppMenuPopup.status === PlasmaExtras.Menu.Open || root.itemPressed) {
+                return "pressed";
+            } else {
+                return "hover";
+            }
         }
     }
     Title { 
