@@ -1,4 +1,8 @@
 # Mac Title Menu
+<p align="center">
+  <img src="./mac_title_menu_logo.png" width="250" alt="Mac Title Menu Logo">
+</p>
+
 A Mac-like window title and context menu applet built natively for KDE Plasma 6.
 
 ## Features
