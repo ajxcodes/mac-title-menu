@@ -5,6 +5,7 @@ import org.kde.plasma.plasmoid
 import org.kde.plasma.plasma5support as Plasma5Support
 import QtQuick.Controls as Controls
 import org.kde.plasma.extras as PlasmaExtras
+import org.kde.ksvg 1.0 as KSvg
 
 MouseArea {
     id: actionsArea
@@ -23,16 +24,21 @@ MouseArea {
         id: hoverHandler
     }
 
-    Rectangle {
+    KSvg.FrameSvgItem {
         anchors.fill: parent
         anchors.topMargin: Kirigami.Units.smallSpacing
         anchors.bottomMargin: Kirigami.Units.smallSpacing
         anchors.leftMargin: Kirigami.Units.largeSpacing
         anchors.rightMargin: 0
-        radius: Kirigami.Units.smallSpacing
-        color: Kirigami.Theme.textColor
         visible: root.macAppMenuPopup.opened || hoverHandler.hovered
-        opacity: root.macAppMenuPopup.opened || actionsArea.pressed ? 0.25 : (hoverHandler.hovered ? 0.15 : 0)
+        imagePath: "widgets/menubaritem"
+        prefix: {
+            if (root.macAppMenuPopup.opened || actionsArea.pressed) {
+                return "pressed";
+            } else {
+                return "hover";
+            }
+        }
     }
 
     onDoubleClicked: {
