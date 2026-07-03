@@ -24,21 +24,16 @@ MouseArea {
         id: hoverHandler
     }
 
-    KSvg.FrameSvgItem {
-        anchors.fill: parent
-        anchors.topMargin: Kirigami.Units.smallSpacing
-        anchors.bottomMargin: Kirigami.Units.smallSpacing
-        anchors.leftMargin: Kirigami.Units.largeSpacing
-        anchors.rightMargin: 0
-        visible: root.macAppMenuPopup.opened || hoverHandler.hovered
-        imagePath: "widgets/menubaritem"
-        prefix: {
-            if (root.macAppMenuPopup.opened || actionsArea.pressed) {
-                return "pressed";
-            } else {
-                return "hover";
-            }
-        }
+    Binding {
+        target: root
+        property: "itemHovered"
+        value: hoverHandler.hovered
+    }
+
+    Binding {
+        target: root
+        property: "itemPressed"
+        value: actionsArea.pressed
     }
 
     onDoubleClicked: {
