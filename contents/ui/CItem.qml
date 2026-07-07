@@ -4,10 +4,10 @@ import QtQuick.Layouts
 //Custom item to make the code look cleaner
 Item {
     required property real length
-    Layout.minimumWidth:  isVertical?root.width :length
-    Layout.maximumWidth:  isVertical?root.width :length
-    Layout.minimumHeight:!isVertical?root.height:length
-    Layout.maximumHeight:!isVertical?root.height:length
+    Layout.minimumWidth:  isVertical?parent.width :length
+    Layout.maximumWidth:  isVertical?parent.width :length
+    Layout.minimumHeight:!isVertical?parent.height:length
+    Layout.maximumHeight:!isVertical?parent.height:length
     /*Rectangle{
         color: "green"
         anchors.fill: parent
