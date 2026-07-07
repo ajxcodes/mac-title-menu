@@ -123,9 +123,8 @@ PlasmoidItem {
         }
     }
     KSvg.FrameSvgItem {
+        id: frame
         anchors.fill: parent
-        anchors.leftMargin: Kirigami.Units.largeSpacing
-        anchors.rightMargin: 0
         visible: root.macAppMenuPopup.status === PlasmaExtras.Menu.Open || root.itemHovered
         imagePath: "widgets/menubaritem"
         prefix: {
@@ -138,9 +137,13 @@ PlasmoidItem {
     }
     Title { 
         id: titleLayout
-        anchors.centerIn: parent
-        onImplicitWidthChanged: root.titleImplicitWidth = implicitWidth + (Kirigami.Units.smallSpacing * 4)
-        onImplicitHeightChanged: root.titleImplicitHeight = implicitHeight
+        anchors.fill: parent
+        anchors.leftMargin: frame.margins.left
+        anchors.rightMargin: frame.margins.right
+        anchors.topMargin: frame.margins.top
+        anchors.bottomMargin: frame.margins.bottom
+        onImplicitWidthChanged: root.titleImplicitWidth = implicitWidth + frame.margins.left + frame.margins.right
+        onImplicitHeightChanged: root.titleImplicitHeight = implicitHeight + frame.margins.top + frame.margins.bottom
     }
 
     PlasmaExtras.Menu {

@@ -9,14 +9,30 @@ import org.kde.ksvg 1.0 as KSvg
 
 MouseArea {
     id: actionsArea
-    acceptedButtons: Qt.LeftButton | Qt.MiddleButton
+    acceptedButtons: Qt.LeftButton | Qt.MiddleButton | Qt.RightButton
+    propagateComposedEvents: true
     anchors.fill: parent
     property bool wheelIsBlocked: false
+    
+    onPressed: function(event) {
+        if (event.button === Qt.RightButton) {
+            event.accepted = false;
+        }
+    }
+    
+    onReleased: function(event) {
+        if (event.button === Qt.RightButton) {
+            event.accepted = false;
+        }
+    }
+    
     onClicked: function(event){
         if(existsWindowActive && event.button === Qt.MiddleButton && cfg.closeAllowed) {
             windowInfoLoader.item.requestClose();
         } else if (existsWindowActive && event.button === Qt.LeftButton && cfg.leftClickMenu) {
             root.macAppMenuPopup.open();
+        } else if (event.button === Qt.RightButton) {
+            event.accepted = false;
         }
     }
 
