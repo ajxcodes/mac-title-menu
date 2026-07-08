@@ -5,7 +5,8 @@ import org.kde.taskmanager as TaskManager
 
 Item {
     id: plasmaTasksItem
-    readonly property bool existsWindowActive: root.activeTaskItem && tasksRepeater.count > 0 && (activeTaskItem.isActive || root.macAppMenuPopup.opened || root.isAboutOpen)
+    property var lastActiveTaskItem: null
+    readonly property bool existsWindowActive: root.activeTaskItem && tasksRepeater.count > 0 && (activeTaskItem.isActive || root.macAppMenuPopup.opened || root.isAboutOpen || root.recentlyClosedAbout)
     property Item activeTaskItem: null
 
     TaskManager.TasksModel {
@@ -39,6 +40,13 @@ Item {
 
                 property string title: ""
                 property string discoveredAppName: ""
+                
+                readonly property string modelAppId: typeof AppId !== 'undefined' && AppId ? AppId : ""
+                readonly property string modelGenericName: typeof GenericName !== 'undefined' && GenericName ? GenericName : ""
+                readonly property string modelAppPid: typeof AppPid !== 'undefined' && AppPid ? AppPid.toString() : ""
+                
+                readonly property string dbusAppMenuServiceName: ApplicationMenuServiceName || ""
+                readonly property string dbusAppMenuObjectPath: ApplicationMenuObjectPath || ""
 
                 readonly property var m: model
 
