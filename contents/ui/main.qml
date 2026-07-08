@@ -185,10 +185,8 @@ PlasmoidItem {
                 
                 if (service !== "" && path !== "") {
                     // Try using the DBus Python Script
+                    // Note: plasmoid.file is avoided here because it can fail to resolve during plasmoid updates.
                     var scriptPath = Qt.resolvedUrl("../scripts/trigger_about.py").toString().replace("file://", "");
-                    if (scriptPath === "") {
-                        scriptPath = plasmoid.file("", "scripts/trigger_about.py");
-                    }
                     dbusTriggerSource.connectSource('python3 ' + scriptPath + ' ' + service + ' ' + path);
                 } else {
                     // Fallback instantly if no DBus AppMenu is available
@@ -314,6 +312,8 @@ PlasmoidItem {
         
         onActiveChanged: {
             if (visible && !active) {
+                // Auto-close on focus loss.
+                // Note: The onVisibleChanged handler below safely triggers the recentlyClosedAbout timer to prevent race conditions.
                 visible = false;
             }
         }
