@@ -41,7 +41,11 @@ def main():
         about_id = find_about(layout)
         if about_id is not None:
             # Event takes: id (int32), eventId (string), data (variant), timestamp (uint32)
-            interface.Event(about_id, "clicked", dbus.String("", variant_level=1), 0)
+            try:
+                interface.Event(about_id, "clicked", dbus.String("", variant_level=1), 0)
+            except Exception as e:
+                # Some legacy apps might reject the standard variant_level=1 signature
+                interface.Event(about_id, "clicked", "", 0)
             print("SUCCESS")
             sys.exit(0)
         else:

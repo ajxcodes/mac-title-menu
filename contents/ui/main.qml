@@ -28,6 +28,17 @@ PlasmoidItem {
             aboutWindow.visible = false;
         }
     }
+    
+    function showFallbackAboutWindow() {
+        aboutWindow.targetAppName = root.activeTaskItem ? root.activeTaskItem.appName : "Mac Title Menu";
+        aboutWindow.targetAppId = root.activeTaskItem ? root.activeTaskItem.modelAppId : "";
+        aboutWindow.targetAppPid = root.activeTaskItem ? root.activeTaskItem.modelAppPid : "";
+        aboutWindow.targetGenericName = root.activeTaskItem ? root.activeTaskItem.modelGenericName : "";
+        aboutWindow.targetTitle = root.text;
+        aboutWindow.targetIcon = root.icon;
+        aboutWindow.visible = true;
+        aboutWindow.requestActivate();
+    }
 
     readonly property bool isVertical:              plasmoid.formFactor === PlasmaCore.Types.Vertical
     readonly property bool existsWindowActive:      windowInfoLoader.item && windowInfoLoader.item.existsWindowActive
@@ -265,25 +276,11 @@ PlasmoidItem {
                 disconnectSource(sourceName);
             } else if (output === "NOT_FOUND" || output === "ERROR") {
                 disconnectSource(sourceName);
-                aboutWindow.targetAppName = root.activeTaskItem ? root.activeTaskItem.appName : "Mac Title Menu";
-                aboutWindow.targetAppId = root.activeTaskItem ? root.activeTaskItem.modelAppId : "";
-                aboutWindow.targetAppPid = root.activeTaskItem ? root.activeTaskItem.modelAppPid : "";
-                aboutWindow.targetGenericName = root.activeTaskItem ? root.activeTaskItem.modelGenericName : "";
-                aboutWindow.targetTitle = root.text;
-                aboutWindow.targetIcon = root.icon;
-                aboutWindow.visible = true;
-                aboutWindow.requestActivate();
+                root.showFallbackAboutWindow();
             } else if (data["exit code"] !== undefined || data.exitCode !== undefined) {
                 // Process exited without finding the about menu
                 disconnectSource(sourceName);
-                aboutWindow.targetAppName = root.activeTaskItem ? root.activeTaskItem.appName : "Mac Title Menu";
-                aboutWindow.targetAppId = root.activeTaskItem ? root.activeTaskItem.modelAppId : "";
-                aboutWindow.targetAppPid = root.activeTaskItem ? root.activeTaskItem.modelAppPid : "";
-                aboutWindow.targetGenericName = root.activeTaskItem ? root.activeTaskItem.modelGenericName : "";
-                aboutWindow.targetTitle = root.text;
-                aboutWindow.targetIcon = root.icon;
-                aboutWindow.visible = true;
-                aboutWindow.requestActivate();
+                root.showFallbackAboutWindow();
             }
         }
     }
