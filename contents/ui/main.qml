@@ -357,19 +357,32 @@ PlasmoidItem {
                 visible: aboutWindow.targetTitle !== aboutWindow.targetAppName && aboutWindow.targetTitle !== ""
             }
             
-            TextEdit {
+            Kirigami.SelectableLabel {
                 Layout.alignment: Qt.AlignHCenter
-                text: aboutWindow.targetAppPid !== "" ? (aboutWindow.targetAppId + " • PID: " + aboutWindow.targetAppPid) : aboutWindow.targetAppId
-                readOnly: true
-                selectByMouse: true
+                text: aboutWindow.targetAppId
                 Layout.fillWidth: true
                 horizontalAlignment: Text.AlignHCenter
                 opacity: 0.4
                 font.pixelSize: Kirigami.Theme.defaultFont.pixelSize * 0.8
-                visible: aboutWindow.targetAppId !== "" || aboutWindow.targetAppPid !== ""
-                color: Kirigami.Theme.textColor
-                selectionColor: Kirigami.Theme.highlightColor
-                selectedTextColor: Kirigami.Theme.highlightedTextColor
+                visible: aboutWindow.targetAppId !== ""
+            }
+            
+            RowLayout {
+                Layout.alignment: Qt.AlignHCenter
+                visible: aboutWindow.targetAppPid !== ""
+                spacing: Kirigami.Units.smallSpacing
+
+                PlasmaComponents.Label {
+                    text: "PID:"
+                    opacity: 0.4
+                    font.pixelSize: Kirigami.Theme.defaultFont.pixelSize * 0.8
+                }
+
+                Kirigami.SelectableLabel {
+                    text: aboutWindow.targetAppPid
+                    opacity: 0.4
+                    font.pixelSize: Kirigami.Theme.defaultFont.pixelSize * 0.8
+                }
             }
 
             Item { Layout.fillHeight: true } // Spacer
