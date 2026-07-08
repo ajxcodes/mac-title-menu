@@ -271,6 +271,8 @@ PlasmoidItem {
         engine: "executable"
         connectedSources: []
         onNewData: (sourceName, data) => {
+            if (sourceName.indexOf("trigger_about.py") === -1) return;
+            
             var output = (data.stdout || "").trim();
             if (output === "SUCCESS") {
                 disconnectSource(sourceName);
@@ -352,7 +354,7 @@ PlasmoidItem {
                 elide: Text.ElideRight
                 Layout.fillWidth: true
                 horizontalAlignment: Text.AlignHCenter
-                opacity: 0.6
+                color: Kirigami.Theme.disabledTextColor
                 font.pixelSize: Kirigami.Theme.defaultFont.pixelSize * 0.9
                 visible: aboutWindow.targetTitle !== aboutWindow.targetAppName && aboutWindow.targetTitle !== ""
             }
