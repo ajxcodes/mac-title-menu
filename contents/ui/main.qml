@@ -362,7 +362,7 @@ PlasmoidItem {
                 text: aboutWindow.targetAppId
                 Layout.fillWidth: true
                 horizontalAlignment: Text.AlignHCenter
-                opacity: 0.4
+                color: Kirigami.Theme.disabledTextColor
                 font.pixelSize: Kirigami.Theme.defaultFont.pixelSize * 0.8
                 visible: aboutWindow.targetAppId !== ""
             }
@@ -374,13 +374,13 @@ PlasmoidItem {
 
                 PlasmaComponents.Label {
                     text: "PID:"
-                    opacity: 0.4
+                    color: Kirigami.Theme.disabledTextColor
                     font.pixelSize: Kirigami.Theme.defaultFont.pixelSize * 0.8
                 }
 
                 Kirigami.SelectableLabel {
                     text: aboutWindow.targetAppPid
-                    opacity: 0.4
+                    color: Kirigami.Theme.disabledTextColor
                     font.pixelSize: Kirigami.Theme.defaultFont.pixelSize * 0.8
                 }
             }
