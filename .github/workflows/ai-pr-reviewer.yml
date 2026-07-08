@@ -1,0 +1,469 @@
+name: AI Pull Request Reviewer
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - 'contents/**'
+      - '*.sh'
+      - 'metadata.json'
+
+permissions:
+  pull-requests: write
+  issues: write
+  discussions: write
+  # 'contents: write' is required for resolving PR review threads via the GraphQL resolveReviewThread mutation
+  contents: write
+
+jobs:
+  review:
+    name: Code Review (Gemini AI)
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0 # Fetch all history so we can generate diffs
+
+    - name: Generate PR Diff
+      run: |
+        git fetch origin ${{ github.base_ref }}
+        # Generate diff between the target branch and the PR branch, excluding lockfiles and assets
+        git diff origin/${{ github.base_ref }}...HEAD -- . ':(exclude)pnpm-lock.yaml' ':(exclude)package-lock.json' ':(exclude)*.svg' > pr_diff.txt
+        # Check size of diff
+        ls -la pr_diff.txt
+
+    - name: Analyze and Comment with Gemini
+      uses: actions/github-script@v7
+      env:
+        GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        script: |
+          const fs = require('fs');
+          const path = 'pr_diff.txt';
+          
+          if (!fs.existsSync(path)) {
+            console.log("No diff file found.");
+            return;
+          }
+          
+          let diffText = fs.readFileSync(path, 'utf8');
+          if (!diffText.trim()) {
+            console.log("Diff is empty.");
+            return;
+          }
+
+          // Truncate if diff is exceptionally large (e.g. > 500k) to prevent token limits
+          // Gemini 2.5 Flash has a context window of 1M+ tokens, # High limit to accommodate large feature PRs (like AI Chat). Excludes protect against junk tokens.
+          const maxCharLimit = 3000000;
+          if (diffText.length > maxCharLimit) {
+            diffText = diffText.substring(0, maxCharLimit) + "\n\n...[Diff truncated due to size limit]...";
+          }
+
+          const apiKey = process.env.GEMINI_API_KEY;
+          if (!apiKey) {
+            console.log("GEMINI_API_KEY secret is not set. Skipping AI review.");
+            return;
+          }
+
+          // 1. Fetch existing review threads on the PR using GraphQL
+          let unresolvedBotThreads = [];
+          try {
+            const threadQuery = `
+              query($owner: String!, $repo: String!, $number: Int!) {
+                repository(owner: $owner, name: $repo) {
+                  pullRequest(number: $number) {
+                    reviewThreads(first: 100) {
+                      nodes {
+                        id
+                        isResolved
+                        path
+                        line
+                        originalLine
+                        comments(first: 50) {
+                          nodes {
+                            id
+                            body
+                            author {
+                              login
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            `;
+
+            const threadResponse = await github.graphql(threadQuery, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              number: context.issue.number
+            });
+
+            const threads = threadResponse.repository.pullRequest.reviewThreads.nodes;
+            for (const thread of threads) {
+              if (!thread.isResolved) {
+                // Check if the bot made any comment in this thread
+                const botComment = thread.comments.nodes.find(c => 
+                  c.body.includes("Antigravity AI Suggestion") || 
+                  c.body.includes("Powered by Google Gemini") ||
+                  c.author?.login?.includes("github-actions")
+                );
+                if (botComment) {
+                  unresolvedBotThreads.push({
+                    threadId: thread.id,
+                    path: thread.path,
+                    line: thread.line || thread.originalLine || "unknown",
+                    body: botComment.body
+                  });
+                }
+              }
+            }
+          } catch (e) {
+            console.error("Failed to query unresolved threads:", e);
+          }
+
+          const previousThreadsText = unresolvedBotThreads.length > 0 
+            ? JSON.stringify(unresolvedBotThreads, null, 2)
+            : "No unresolved previous issues.";
+
+          const prompt = `You are Antigravity, an expert senior software engineer reviewing a pull request for mac-title-menu, a KDE Plasma global menu applet.
+          
+          Context & Current Standards:
+          - Today's date is July 7, 2026.
+          - The project is built using QML, C++, and Python for KDE Plasma 6.
+          - You MUST carefully review the QML UI code, Python DBus scripts, and Bash scripts in the diff.
+          - Ensure you provide inline comments for any logic flaws, performance issues, or incorrect KDE API usage.
+          
+           You must respond with a SINGLE JSON object with the following structure:
+           {
+             "summary": "A markdown string containing a high-level summary of the PR and a bullet-pointed changelog.",
+             "confidenceLevel": "High | Medium | Low",
+             "confidenceExplanation": "Why this confidence level was chosen based on code complexity, completeness, and diff size.",
+             "resolvedThreads": ["threadId1", "threadId2"],
+             "comments": [
+               {
+                 "path": "apps/api/src/Portfolio.Domain/Blog/Tag.cs",
+                 "line": 15,
+                 "severity": "info",
+                 "body": "🤖 **Antigravity AI Suggestion**\\n\\nConsider making this property read-only..."
+               }
+             ]
+           }
+ 
+           Evaluation Rules:
+           1. **PR Summary (\`summary\`)**: Provide a clear, professional summary of the PR's achievements and files changed. This will be updated directly in the PR description body.
+           2. **Confidence (\`confidenceLevel\` and \`confidenceExplanation\`)**: Assess and state your confidence in the correctness and thoroughness of your review (High, Medium, or Low) and explain why briefly.
+           3. **Old Issues Resolve (\`resolvedThreads\`)**: Compare the new Git Diff against the unresolved reviews list below. If the changes in the Diff successfully fix an issue, include its 'threadId' in the array so we can resolve the conversation thread.
+           4. **New Issues (\`comments\`)**: Find logic flaws, security vulnerabilities, or performance issues in the modified files. Identify the specific file path and the line number in the *new* file (right side of the diff) where the issue is. Every comment MUST have a 'severity' property set to one of 'critical', 'warning', or 'info'. Every comment body MUST start with "🤖 **Antigravity AI Suggestion**\\n\\n". Do NOT suggest new comments for issues that are already listed in the 'unresolved previous AI reviews' below. If the code looks great, keep the comments list empty.
+
+          Here are the unresolved previous AI reviews on this PR:
+          \`\`\`json
+          ${previousThreadsText}
+          \`\`\`
+
+          Here is the git diff of the PR changes:
+          \`\`\`diff
+          ${diffText}
+          \`\`\`
+          `;
+
+          try {
+            let response;
+            const models = ['gemini-3.1-flash-lite', 'gemini-2.5-flash', 'gemini-2.5-pro'];
+            let success = false;
+            let successfulModel = '';
+
+            for (let i = 0; i < models.length; i++) {
+              const model = models[i];
+              console.log(`Attempting to generate review using model: ${model}`);
+              const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+              
+              response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  contents: [{
+                    parts: [{ text: prompt }]
+                  }],
+                  generationConfig: {
+                    temperature: 0.1,
+                    responseMimeType: "application/json"
+                  }
+                })
+              });
+
+              if (!response.ok) {
+                const errText = await response.text();
+                console.warn(`API error with ${model}: ${response.status} - ${errText}`);
+                
+                // If 503 and we have more models to try, fallback to the next one
+                if (response.status === 503 && i < models.length - 1) {
+                  console.log(`Got 503. Waiting 3 seconds and falling back to next model...`);
+                  await new Promise(r => setTimeout(r, 3000));
+                  continue;
+                }
+                
+                // If 429 Quota Exceeded, throw specific error to break out and inform PR
+                if (response.status === 429) {
+                  throw new Error(`QUOTA_EXCEEDED: ${errText}`);
+                }
+                
+                // If it's a different error or we're out of models, throw
+                throw new Error(`Gemini API error: ${response.status} - ${errText}`);
+              }
+
+              successfulModel = model;
+              success = true;
+              break; // Success! Break out of the loop
+            }
+
+            let rawJson = '';
+            
+            if (success) {
+              const data = await response.json();
+              if (data && data.candidates && data.candidates.length > 0 &&
+                  data.candidates[0].content && data.candidates[0].content.parts &&
+                  data.candidates[0].content.parts.length > 0 && data.candidates[0].content.parts[0].text) {
+                rawJson = data.candidates[0].content.parts[0].text.trim();
+              } else {
+                console.log("Gemini API response did not contain expected text candidates.");
+                success = false;
+              }
+            }
+
+            if (!success) {
+               console.log("Gemini requests failed or quota exceeded. Attempting fallback to GitHub Copilot (Models API)...");
+               const ghToken = process.env.GITHUB_TOKEN;
+               if (!ghToken) {
+                 throw new Error("All Gemini requests failed and no GITHUB_TOKEN is available for Copilot fallback.");
+               }
+               
+               const copilotUrl = 'https://models.inference.ai.azure.com/chat/completions';
+               const copilotResponse = await fetch(copilotUrl, {
+                 method: 'POST',
+                 headers: {
+                   'Content-Type': 'application/json',
+                   'Authorization': `Bearer ${ghToken}`
+                 },
+                 body: JSON.stringify({
+                   model: 'gpt-4o',
+                   messages: [
+                     {
+                       role: 'system',
+                        content: "You are Antigravity, an expert senior software engineer reviewing a pull request for mac-title-menu, a KDE Plasma global menu applet.\n\nYou must respond with a SINGLE JSON object exactly matching this structure:\n{\n  \"summary\": \"...\",\n  \"confidenceLevel\": \"High | Medium | Low\",\n  \"confidenceExplanation\": \"...\",\n  \"resolvedThreads\": [\"id1\"],\n  \"comments\": [\n    { \"path\": \"...\", \"line\": 15, \"severity\": \"info\", \"body\": \"🤖 **Antigravity AI Suggestion**\\n\\n...\" }\n  ]\n}\n\nNote: every comment in \"comments\" must have a 'severity' property set to one of 'critical', 'warning', or 'info'. Do NOT suggest duplicate comments for issues that are already unresolved in the previous reviews."
+                     },
+                     {
+                       role: 'user',
+                       content: `Evaluation Rules:\n1. PR Summary ('summary')\n2. Confidence ('confidenceLevel' and 'confidenceExplanation')\n3. Old Issues Resolve ('resolvedThreads'): Return array of resolved threadIds.\n4. New Issues ('comments'): Inline comments for logic/security flaws.\n\nHere are the unresolved previous AI reviews:\n${previousThreadsText}\n\nHere is the git diff of the PR changes:\n\`\`\`diff\n${diffText}\n\`\`\``
+                     }
+                   ],
+                   temperature: 0.1,
+                   response_format: { type: "json_object" }
+                 })
+               });
+               
+               if (!copilotResponse.ok) {
+                 const errText = await copilotResponse.text();
+                 throw new Error(`Copilot API fallback failed: ${copilotResponse.status} - ${errText}`);
+               }
+               
+               const copilotData = await copilotResponse.json();
+               rawJson = copilotData.choices[0].message.content.trim();
+               console.log("Successfully generated review using Copilot fallback!");
+            }
+
+            // Parse response JSON
+            const reviewData = JSON.parse(rawJson);
+
+            // 1. Update the Pull Request Description
+            if (reviewData.summary) {
+              const { data: pr } = await github.rest.pulls.get({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: context.issue.number
+              });
+
+              const currentBody = pr.body || '';
+              const marker = "<!-- AI_SUMMARY_START -->";
+              const markerEnd = "<!-- AI_SUMMARY_END -->";
+              let cleanBody = currentBody;
+
+              if (currentBody.includes(marker)) {
+                const startIndex = currentBody.indexOf(marker);
+                const endIndex = currentBody.indexOf(markerEnd);
+                if (endIndex !== -1) {
+                  cleanBody = currentBody.substring(0, startIndex).trim() + "\n" + currentBody.substring(endIndex + markerEnd.length).trim();
+                } else {
+                  cleanBody = currentBody.substring(0, startIndex).trim();
+                }
+              }
+
+              const newBody = `${cleanBody.trim()}\n\n${marker}\n### 🤖 AI-Generated Summary\n\n${reviewData.summary}\n\n*Generated by Google Gemini (${successfulModel})*\n\n${markerEnd}`;
+              
+              await github.rest.pulls.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: context.issue.number,
+                body: newBody
+              });
+              console.log("Successfully updated PR description with AI summary.");
+            }
+
+            // 2. Auto-Resolve Fixed Conversation Threads
+            if (reviewData.resolvedThreads && reviewData.resolvedThreads.length > 0) {
+              for (const threadId of reviewData.resolvedThreads) {
+                try {
+                  await github.graphql(`
+                    mutation($threadId: ID!) {
+                      resolveReviewThread(input: { threadId: $threadId }) {
+                        thread {
+                          id
+                          isResolved
+                        }
+                      }
+                    }
+                  `, { threadId });
+                  console.log(`Successfully resolved thread ${threadId}`);
+                } catch (err) {
+                  console.error(`Failed to resolve thread ${threadId}:`, err);
+                }
+              }
+            }
+
+            // 3. Post New Inline Code Review Comments
+            if (reviewData.comments && reviewData.comments.length > 0) {
+              const { data: prInfo } = await github.rest.pulls.get({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: context.issue.number
+              });
+
+              for (const comment of reviewData.comments) {
+                // Skip if there is already an unresolved thread on the same file and line
+                const lineNum = parseInt(comment.line);
+                const hasExistingUnresolved = unresolvedBotThreads.some(t => 
+                  t.path === comment.path && parseInt(t.line) === lineNum
+                );
+                if (hasExistingUnresolved) {
+                  console.log(`Skipping duplicate comment on ${comment.path}:${lineNum} as there is already an unresolved thread.`);
+                  continue;
+                }
+
+                let severityHeader = "";
+                if (comment.severity) {
+                  const sev = comment.severity.toLowerCase();
+                  if (sev === "critical") severityHeader = "🔴 **CRITICAL**: ";
+                  else if (sev === "warning") severityHeader = "⚠️ **WARNING**: ";
+                  else severityHeader = "ℹ️ **INFO**: ";
+                }
+                
+                const commentBody = `${comment.body}`.includes("🤖 **Antigravity AI Suggestion**\n\n")
+                  ? `${comment.body}`.replace("🤖 **Antigravity AI Suggestion**\n\n", `🤖 **Antigravity AI Suggestion**\n\n${severityHeader}`)
+                  : `🤖 **Antigravity AI Suggestion**\n\n${severityHeader}${comment.body}`;
+
+                try {
+                  await github.rest.pulls.createReviewComment({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    pull_number: context.issue.number,
+                    commit_id: prInfo.head.sha,
+                    path: comment.path,
+                    line: parseInt(comment.line),
+                    side: 'RIGHT',
+                    body: `${commentBody}\n\n*Powered by Google Gemini (${successfulModel})*`
+                  });
+                  console.log(`Created inline comment on ${comment.path}:${comment.line}`);
+                } catch (err) {
+                  console.log(`Failed to create inline comment on ${comment.path}:${comment.line}. Falling back to issue comment. Error: ${err.message}`);
+                  // Fallback: post as general PR comment if line mapping fails
+                  await github.rest.issues.createComment({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: context.issue.number,
+                    body: `**Feedback on ${comment.path} (Line ${comment.line}):**\n\n${commentBody}\n\n*Powered by Google Gemini (${successfulModel})*`
+                  });
+                }
+              }
+            }
+
+            // 4. Post Run Summary Comment
+            const resolvedCount = reviewData.resolvedThreads ? reviewData.resolvedThreads.length : 0;
+            const newCommentsCount = reviewData.comments ? reviewData.comments.length : 0;
+            
+            const resolvedList = [];
+            if (reviewData.resolvedThreads) {
+              for (const threadId of reviewData.resolvedThreads) {
+                const thread = unresolvedBotThreads.find(t => t.threadId === threadId);
+                if (thread) {
+                  resolvedList.push(`- Path: \`${thread.path}\` (Line ${thread.line})`);
+                } else {
+                  resolvedList.push(`- Thread ID: \`${threadId}\``);
+                }
+              }
+            }
+            const resolvedDetails = resolvedList.length > 0 ? resolvedList.join('\n') : "_None_";
+
+            const newList = [];
+            if (reviewData.comments) {
+              for (const comment of reviewData.comments) {
+                newList.push(`- \`[${comment.severity || 'info'}]\` \`${comment.path}\` (Line ${comment.line})`);
+              }
+            }
+            const newCommentsDetails = newList.length > 0 ? newList.join('\n') : "_None_";
+
+            const outstandingList = [];
+            for (const thread of unresolvedBotThreads) {
+              if (!reviewData.resolvedThreads || !reviewData.resolvedThreads.includes(thread.threadId)) {
+                outstandingList.push(`- Path: \`${thread.path}\` (Line ${thread.line})`);
+              }
+            }
+            const outstandingCount = outstandingList.length;
+            const outstandingDetails = outstandingList.length > 0 ? outstandingList.join('\n') : "_None_";
+
+            const summaryCommentBody = `### 🤖 Antigravity AI Review Run Summary
+
+            - **Confidence Level**: **${reviewData.confidenceLevel || 'N/A'}** - *${reviewData.confidenceExplanation || ''}*
+
+            #### 🔧 Comments Resolved (${resolvedCount})
+            ${resolvedDetails}
+
+            #### 📝 New Comments Added (${newCommentsCount})
+            ${newCommentsDetails}
+
+            #### ⏳ Outstanding Comments (${outstandingCount})
+            ${outstandingDetails}
+
+            *Powered by Google Gemini (${successfulModel})*`;
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: summaryCommentBody
+            });
+            console.log("Successfully posted AI review run summary comment to PR.");
+          } catch (error) {
+            console.error("Error generating or posting review:", error);
+            
+            // Post a comment to the PR if the API quota was exceeded or Copilot fallback failed
+            if (error.message && (error.message.includes('QUOTA_EXCEEDED') || error.message.includes('429') || error.message.includes('Copilot API fallback failed'))) {
+              try {
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: context.issue.number,
+                  body: "⚠️ **AI PR Review Skipped**: The AI provider API quotas (Gemini/Copilot) have been exceeded or rate-limited. The automated code review could not be completed at this time."
+                });
+                console.log("Posted quota exceeded warning to PR.");
+              } catch (e) {
+                console.error("Failed to post quota warning comment:", e);
+              }
+            }
+          }

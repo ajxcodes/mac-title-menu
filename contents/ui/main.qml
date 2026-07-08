@@ -7,6 +7,7 @@ import org.kde.plasma.plasmoid
 import org.kde.plasma.core as PlasmaCore
 import org.kde.plasma.components as PlasmaComponents
 import org.kde.plasma.extras as PlasmaExtras
+import org.kde.plasma.plasma5support as Plasma5Support
 import org.kde.ksvg 1.0 as KSvg
 import org.kde.taskmanager       as TaskManager
 import org.kde.kirigami          as Kirigami
@@ -21,6 +22,23 @@ PlasmoidItem {
 
     property int titleImplicitWidth: 100
     property int titleImplicitHeight: 20
+    
+    function closeAboutWindow() {
+        if (aboutWindow.visible) {
+            aboutWindow.visible = false;
+        }
+    }
+    
+    function showFallbackAboutWindow() {
+        aboutWindow.targetAppName = root.activeTaskItem ? root.activeTaskItem.appName : "Mac Title Menu";
+        aboutWindow.targetAppId = root.activeTaskItem ? root.activeTaskItem.modelAppId : "";
+        aboutWindow.targetAppPid = root.activeTaskItem ? root.activeTaskItem.modelAppPid : "";
+        aboutWindow.targetGenericName = root.activeTaskItem ? root.activeTaskItem.modelGenericName : "";
+        aboutWindow.targetTitle = root.text;
+        aboutWindow.targetIcon = root.icon;
+        aboutWindow.visible = true;
+        aboutWindow.requestActivate();
+    }
 
     readonly property bool isVertical:              plasmoid.formFactor === PlasmaCore.Types.Vertical
     readonly property bool existsWindowActive:      windowInfoLoader.item && windowInfoLoader.item.existsWindowActive
@@ -28,6 +46,15 @@ PlasmoidItem {
     readonly property bool isActiveWindowMaximized: existsWindowActive && activeTaskItem.isMaximized
     readonly property var cfg:                      plasmoid.configuration
     property bool isAboutOpen:                      aboutWindow.visible
+    property string aboutWindowTitle:               aboutWindow.title
+    property bool recentlyClosedAbout:              false
+    
+    Timer {
+        id: aboutCloseDelayTimer
+        interval: 500
+        repeat: false
+        onTriggered: root.recentlyClosedAbout = false
+    }
     property alias macAppMenuPopup:                 macAppMenuPopup
     property bool itemHovered:                      false
     property bool itemPressed:                      false
@@ -153,11 +180,25 @@ PlasmoidItem {
         PlasmaExtras.MenuItem {
             text: i18n("About %1", root.activeTaskItem ? root.activeTaskItem.appName : "")
             onClicked: Qt.callLater(function(){
-                aboutWindow.targetAppName = root.activeTaskItem ? root.activeTaskItem.appName : "Mac Title Menu";
-                aboutWindow.targetTitle = root.text;
-                aboutWindow.targetIcon = root.icon;
-                aboutWindow.visible = true;
-                aboutWindow.requestActivate();
+                var service = root.activeTaskItem ? root.activeTaskItem.dbusAppMenuServiceName : "";
+                var path = root.activeTaskItem ? root.activeTaskItem.dbusAppMenuObjectPath : "";
+                
+                if (service !== "" && path !== "") {
+                    // Try using the DBus Python Script
+                    // Note: plasmoid.file is avoided here because it can fail to resolve during plasmoid updates.
+                    var scriptPath = Qt.resolvedUrl("../scripts/trigger_about.py").toString().replace("file://", "");
+                    dbusTriggerSource.connectSource('python3 ' + scriptPath + ' ' + service + ' ' + path);
+                } else {
+                    // Fallback instantly if no DBus AppMenu is available
+                    aboutWindow.targetAppName = root.activeTaskItem ? root.activeTaskItem.appName : "Mac Title Menu";
+                    aboutWindow.targetAppId = root.activeTaskItem ? root.activeTaskItem.modelAppId : "";
+                    aboutWindow.targetAppPid = root.activeTaskItem ? root.activeTaskItem.modelAppPid : "";
+                    aboutWindow.targetGenericName = root.activeTaskItem ? root.activeTaskItem.modelGenericName : "";
+                    aboutWindow.targetTitle = root.text;
+                    aboutWindow.targetIcon = root.icon;
+                    aboutWindow.visible = true;
+                    aboutWindow.requestActivate();
+                }
             })
         }
         PlasmaExtras.MenuItem { separator: true }
@@ -223,20 +264,59 @@ PlasmoidItem {
 
     ActionsMouseArea {}
 
+    Plasma5Support.DataSource {
+        id: dbusTriggerSource
+        engine: "executable"
+        connectedSources: []
+        onNewData: (sourceName, data) => {
+            if (sourceName.indexOf("trigger_about.py") === -1) return;
+            
+            var output = (data.stdout || "").trim();
+            if (output === "SUCCESS") {
+                disconnectSource(sourceName);
+            } else if (output === "NOT_FOUND" || output === "ERROR") {
+                disconnectSource(sourceName);
+                root.showFallbackAboutWindow();
+            } else if (data["exit code"] !== undefined || data.exitCode !== undefined) {
+                // Process exited without finding the about menu
+                disconnectSource(sourceName);
+                root.showFallbackAboutWindow();
+            }
+        }
+    }
+
     Window {
         id: aboutWindow
         
         property string targetAppName: "Mac Title Menu"
+        property string targetAppId: ""
+        property string targetAppPid: ""
+        property string targetGenericName: ""
         property string targetTitle: ""
         property var targetIcon: ""
 
         title: i18n("About %1", targetAppName)
-        width: Kirigami.Units.gridUnit * 18
+        width: Kirigami.Units.gridUnit * 22
         height: aboutLayout.implicitHeight + Kirigami.Units.largeSpacing * 2
         x: Screen.width / 2 - width / 2
         y: Screen.height / 2 - height / 2
         color: Kirigami.Theme.backgroundColor
         flags: Qt.Dialog | Qt.WindowCloseButtonHint | Qt.WindowTitleHint
+
+        onVisibleChanged: {
+            if (!visible) {
+                root.recentlyClosedAbout = true;
+                aboutCloseDelayTimer.restart();
+            }
+        }
+        
+        onActiveChanged: {
+            if (visible && !active) {
+                // Auto-close on focus loss.
+                // Note: The onVisibleChanged handler below safely triggers the recentlyClosedAbout timer to prevent race conditions.
+                visible = false;
+            }
+        }
 
         ColumnLayout {
             id: aboutLayout
@@ -257,6 +337,16 @@ PlasmoidItem {
                 font.bold: true
                 font.pixelSize: Kirigami.Theme.defaultFont.pixelSize * 1.5
             }
+            
+            PlasmaComponents.Label {
+                Layout.alignment: Qt.AlignHCenter
+                text: aboutWindow.targetGenericName !== "" ? aboutWindow.targetGenericName : "Application"
+                font.pixelSize: Kirigami.Theme.defaultFont.pixelSize * 0.9
+                opacity: 0.8
+                visible: aboutWindow.targetAppName !== "Mac Title Menu"
+            }
+
+            Item { Layout.preferredHeight: Kirigami.Units.smallSpacing } // Small Spacer
 
             PlasmaComponents.Label {
                 Layout.alignment: Qt.AlignHCenter
@@ -264,7 +354,37 @@ PlasmoidItem {
                 elide: Text.ElideRight
                 Layout.fillWidth: true
                 horizontalAlignment: Text.AlignHCenter
-                opacity: 0.7
+                color: Kirigami.Theme.disabledTextColor
+                font.pixelSize: Kirigami.Theme.defaultFont.pixelSize * 0.9
+                visible: aboutWindow.targetTitle !== aboutWindow.targetAppName && aboutWindow.targetTitle !== ""
+            }
+            
+            Kirigami.SelectableLabel {
+                Layout.alignment: Qt.AlignHCenter
+                text: aboutWindow.targetAppId
+                Layout.fillWidth: true
+                horizontalAlignment: Text.AlignHCenter
+                color: Kirigami.Theme.disabledTextColor
+                font.pixelSize: Kirigami.Theme.defaultFont.pixelSize * 0.8
+                visible: aboutWindow.targetAppId !== ""
+            }
+            
+            RowLayout {
+                Layout.alignment: Qt.AlignHCenter
+                visible: aboutWindow.targetAppPid !== ""
+                spacing: Kirigami.Units.smallSpacing
+
+                PlasmaComponents.Label {
+                    text: "PID:"
+                    color: Kirigami.Theme.disabledTextColor
+                    font.pixelSize: Kirigami.Theme.defaultFont.pixelSize * 0.8
+                }
+
+                Kirigami.SelectableLabel {
+                    text: aboutWindow.targetAppPid
+                    color: Kirigami.Theme.disabledTextColor
+                    font.pixelSize: Kirigami.Theme.defaultFont.pixelSize * 0.8
+                }
             }
 
             Item { Layout.fillHeight: true } // Spacer
