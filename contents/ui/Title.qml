@@ -48,7 +48,7 @@ GridLayout {
             else if(cfg.lengthKind == 1) return labelLen
             else return Math.min(label.implicitWidth,labelLen)
         }
-        clip: true
+        clip: false
         PlasmaComponents.Label {
             id                      : label
             verticalAlignment       : Text.AlignVCenter
