@@ -12,6 +12,7 @@ import "../../tools/Tools.js" as Tools
 Kirigami.ScrollablePage {
     id: root
     readonly property alias cfg_firstSpace: firstSpace.value
+    readonly property alias cfg_useNativeMargins: useNativeMarginsChk.checked
     readonly property alias cfg_midSpace: midSpace.value
     readonly property alias cfg_lastSpace: lastSpace.value
     readonly property alias cfg_txt: txt.text
@@ -188,6 +189,19 @@ Kirigami.ScrollablePage {
             }
         }
 
+        PC3.CheckBox {
+            id: useNativeMarginsChk
+            Kirigami.FormData.label: i18n("Use native Plasma margins")
+            text: i18n("Match Global Menu margins")
+        }
+        PC3.Label {
+            Kirigami.FormData.label: ""
+            text: i18n("Note: Native margins add an unconfigurable ~2px spacing to the widget edges.")
+            opacity: 0.7
+            visible: useNativeMarginsChk.checked
+            wrapMode: Text.WordWrap
+            Layout.maximumWidth: 300
+        }
         PC3.SpinBox {
             id: firstSpace
             Kirigami.FormData.label: i18n("Space before icon:")

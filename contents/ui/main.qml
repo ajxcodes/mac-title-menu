@@ -20,8 +20,8 @@ PlasmoidItem {
     Plasmoid.backgroundHints:   root.expanded ? PlasmaCore.Types.NoBackground : PlasmaCore.Types.DefaultBackground
     preferredRepresentation:    Plasmoid.compactRepresentation
 
-    property int titleImplicitWidth: 100
-    property int titleImplicitHeight: 20
+    property int titleImplicitWidth: titleLayout.implicitWidth + (cfg.useNativeMargins ? frame.margins.left + frame.margins.right : 0)
+    property int titleImplicitHeight: titleLayout.implicitHeight + (cfg.useNativeMargins ? frame.margins.top + frame.margins.bottom : 0)
     
     function closeAboutWindow() {
         if (aboutWindow.visible) {
@@ -165,12 +165,10 @@ PlasmoidItem {
     Title { 
         id: titleLayout
         anchors.fill: parent
-        anchors.leftMargin: frame.margins.left
-        anchors.rightMargin: frame.margins.right
-        anchors.topMargin: frame.margins.top
-        anchors.bottomMargin: frame.margins.bottom
-        onImplicitWidthChanged: root.titleImplicitWidth = implicitWidth + frame.margins.left + frame.margins.right
-        onImplicitHeightChanged: root.titleImplicitHeight = implicitHeight + frame.margins.top + frame.margins.bottom
+        anchors.leftMargin: cfg.useNativeMargins ? frame.margins.left : 0
+        anchors.rightMargin: cfg.useNativeMargins ? frame.margins.right : 0
+        anchors.topMargin: cfg.useNativeMargins ? frame.margins.top : 0
+        anchors.bottomMargin: cfg.useNativeMargins ? frame.margins.bottom : 0
     }
 
     PlasmaExtras.Menu {
