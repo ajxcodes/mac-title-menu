@@ -165,12 +165,12 @@ PlasmoidItem {
     Title { 
         id: titleLayout
         anchors.fill: parent
-        anchors.leftMargin: frame.margins.left
-        anchors.rightMargin: frame.margins.right
-        anchors.topMargin: frame.margins.top
-        anchors.bottomMargin: frame.margins.bottom
-        onImplicitWidthChanged: root.titleImplicitWidth = implicitWidth + frame.margins.left + frame.margins.right
-        onImplicitHeightChanged: root.titleImplicitHeight = implicitHeight + frame.margins.top + frame.margins.bottom
+        anchors.leftMargin: cfg.useNativeMargins ? frame.margins.left : 0
+        anchors.rightMargin: cfg.useNativeMargins ? frame.margins.right : 0
+        anchors.topMargin: cfg.useNativeMargins ? frame.margins.top : 0
+        anchors.bottomMargin: cfg.useNativeMargins ? frame.margins.bottom : 0
+        onImplicitWidthChanged: root.titleImplicitWidth = implicitWidth + (cfg.useNativeMargins ? frame.margins.left + frame.margins.right : 0)
+        onImplicitHeightChanged: root.titleImplicitHeight = implicitHeight + (cfg.useNativeMargins ? frame.margins.top + frame.margins.bottom : 0)
     }
 
     PlasmaExtras.Menu {
