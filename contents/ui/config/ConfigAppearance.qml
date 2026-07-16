@@ -189,12 +189,10 @@ Kirigami.ScrollablePage {
             }
         }
 
-        RowLayout {
-            Kirigami.FormData.label: i18n("Use native Plasma margins:")
-            PC3.CheckBox {
-                id: useNativeMarginsChk
-                text: i18n("Match Global Menu margins")
-            }
+        PC3.CheckBox {
+            id: useNativeMarginsChk
+            Kirigami.FormData.label: i18n("Use native Plasma margins")
+            text: i18n("Match Global Menu margins")
         }
         PC3.Label {
             Kirigami.FormData.label: ""
